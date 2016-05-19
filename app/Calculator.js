@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom';
 import Operator from './components/Operator';
 import Screen from './components/Screen';
 import NumberInput from './components/NumberInput';
+import Decimal from './components/Decimal';
 import Equals from './components/Equals';
 import Delete from './components/Delete';
 import Reset from './components/Reset';
@@ -20,6 +21,9 @@ class Calculator extends React.Component {
 		}
 	}
 	calculate () {
+		// Convert decimals first
+		this.convertDecimals();
+
 		// Order of operations as according to BIDMAS (no B)
 		let orderOfOps = {
 			"^": 1,
@@ -118,6 +122,36 @@ class Calculator extends React.Component {
 			});
 		}
 	}
+	onDecimalPlaceClick () {
+		let previousInput = this.state.calcArray[this.state.calcArray.length - 1];
+
+		if ( !isNaN(previousInput) ) {
+			this.setState({
+				calcArray: this.state.calcArray.concat(["."]),
+				display: this.state.calcArray.concat(["."]).join(" "),
+				justEvaluated: false
+			})
+		}
+	}
+	convertDecimals () {
+		let newCalcArray = this.state.calcArray;
+
+		newCalcArray.forEach(function(val, i, arr) {
+			if (val === ".") {
+				let numDecimalPlaces = Math.floor( Math.log10(arr[i+1]) ) + 1;
+				
+				// Divide by powers of 10 to make a decimal
+				arr[i-1] = arr[i-1] + arr[i+1] / Math.pow(10, numDecimalPlaces);
+
+				// Remove decimal place
+				arr.splice(i, i+1);
+			}
+		})
+
+		this.setState({
+			calcArray: newCalcArray
+		})
+	}
 	onOperatorClick (operator) {
 		let previousInput = this.state.calcArray[this.state.calcArray.length - 1];
 
@@ -162,6 +196,7 @@ class Calculator extends React.Component {
 				<Screen output={this.state.display} />
 				<section className="numberPanel">
 					{numbers}
+					<Decimal onClick={this.onDecimalPlaceClick.bind(this)} />
 				</section>
 				<section className="operatorPanel">
 					{operators}
